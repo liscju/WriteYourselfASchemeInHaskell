@@ -11,6 +11,7 @@ data LispVal = Atom String
     | Number Integer
     | String String
     | Bool Bool
+    | Character Char
     deriving(Show)
 
 symbol :: Parser Char
@@ -59,8 +60,19 @@ parseNumber =
                         Nothing -> read parsedNum
             return (Number num)
 
+parseCharacter :: Parser LispVal
+parseCharacter =
+    try $
+        do
+            char '#'
+            char '\\'
+            character <- anyChar
+            return (Character character)
+
+
 parseExpr :: Parser LispVal
-parseExpr = parseNumber
+parseExpr = parseCharacter
+    <|> parseNumber
     <|> parseAtom
     <|> parseString
 
