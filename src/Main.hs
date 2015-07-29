@@ -3,6 +3,7 @@ module Main where
 import Control.Monad
 import Text.ParserCombinators.Parsec hiding (spaces)
 import System.Environment
+import Numeric
 
 data LispVal = Atom String
     | List [LispVal]
@@ -38,13 +39,30 @@ parseAtom =
             "#f" -> Bool False
             _ -> Atom atom
 
+octalPrefix :: Parser String
+octalPrefix =
+    try $ char '#' >> char 'b' >> return "#b"
+
+hexPrefix :: Parser String
+hexPrefix =
+    try $ char '#' >> char 'h' >> return "#h"
+
 parseNumber :: Parser LispVal
-parseNumber = liftM (Number . read) $ many1 digit
+parseNumber =
+    try $
+         do
+            parsedNum <- many1 (digit <|> letter)
+            prefixType <- optionMaybe (hexPrefix <|> octalPrefix)
+            let num = case prefixType of
+                        Just "#b" -> fst $ head $ readOct parsedNum
+                        Just "#h" -> fst $ head $ readHex parsedNum
+                        Nothing -> read parsedNum
+            return (Number num)
 
 parseExpr :: Parser LispVal
-parseExpr = parseAtom
+parseExpr = parseNumber
+    <|> parseAtom
     <|> parseString
-    <|> parseNumber
 
 readExpr :: String -> String
 readExpr input =
