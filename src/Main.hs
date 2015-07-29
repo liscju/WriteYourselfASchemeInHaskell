@@ -12,6 +12,7 @@ data LispVal = Atom String
     | String String
     | Bool Bool
     | Character Char
+    | Float Float
     deriving(Show)
 
 symbol :: Parser Char
@@ -69,9 +70,20 @@ parseCharacter =
             character <- anyChar
             return (Character character)
 
+parseFloat :: Parser LispVal
+parseFloat =
+    try $
+        do
+            parsedNum <- many1 digit
+            char '.'
+            parsedFract <- many digit
+            let num = fst $ head $ readFloat (parsedNum ++ "." ++ parsedFract)
+            return (Float num)
+
 
 parseExpr :: Parser LispVal
 parseExpr = parseCharacter
+    <|> parseFloat
     <|> parseNumber
     <|> parseAtom
     <|> parseString
