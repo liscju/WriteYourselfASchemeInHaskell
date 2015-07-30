@@ -84,6 +84,7 @@ eval :: LispVal -> LispVal
 eval val@(String _) = val
 eval val@(Number _) = val
 eval val@(Bool _) = val
+eval val@(Atom _) = val
 eval (List [Atom "quote", val]) = val
 eval (List (Atom func : args)) = apply func $ map eval args
 
@@ -97,7 +98,39 @@ primitives = [("+", numericBinop (+)),
               ("/", numericBinop div),
               ("mod", numericBinop mod),
               ("quotient", numericBinop quot),
-              ("remainder", numericBinop rem)]
+              ("remainder", numericBinop rem),
+              ("symbol?", isSymbols),
+              ("string?", isStrings),
+              ("number?", isNumbers),
+              ("symbol->string", symbolsToString)]
+
+symbolsToString :: [LispVal] -> LispVal
+symbolsToString = String . unwords . map symbolToString
+
+symbolToString :: LispVal -> String
+symbolToString (Atom v) = show v
+symbolToString _ = ""
+
+isNumbers :: [LispVal] -> LispVal
+isNumbers = Bool . and . map isNumber
+
+isNumber :: LispVal -> Bool
+isNumber (Number _) = True
+isNumber _ = False
+
+isStrings :: [LispVal] -> LispVal
+isStrings = Bool . and . map isString
+
+isString :: LispVal -> Bool
+isString (String _) = True
+isString _ = False
+
+isSymbols :: [LispVal] -> LispVal
+isSymbols = Bool . and . map isSymbol
+
+isSymbol :: LispVal -> Bool
+isSymbol (Atom _) = True
+isSymbol _ = False
 
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
 numericBinop op params = Number $ foldl1 op $ map unpackNum params
